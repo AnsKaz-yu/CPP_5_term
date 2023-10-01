@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.26)
 project(L1-CPP5term-Calculator)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 26)
 
 set(PROJECT_HEADERS Calculator.h PluginsLoader.h)
 add_executable(L1-CPP5term-Calculator ${PROJECT_SOURCE_DIR}/ main.cpp Calculator.cpp PluginsLoader.cpp)
