@@ -7,21 +7,19 @@
 #include <cmath>
 #include <iostream>
 #include "PluginsLoader.h"
+#include "DefaultOperations.h"
 
-using priorityMap = std::map<std::string, int>;
-using operatorsMap = std::map<std::string, std::function<double(double, double)>>;
 
 class Calculator {
     PluginsLoader PL;
-    priorityMap precedence;
-    operatorsMap functions;
+    DefaultOperations DO;
     std::stack<double> numbers;
     std::stack<std::string> operators;
-    std::string to_default_view(std::string str);
+    std::string conversion_to_the_standard_form(const std::string& str);
     void action();
-
+    void clearStacks();
 public:
-    Calculator();
+    Calculator() = default;
     void Solve(std::string expression);
 };
 

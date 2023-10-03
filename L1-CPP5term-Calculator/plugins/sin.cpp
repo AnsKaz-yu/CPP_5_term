@@ -1,6 +1,7 @@
 #include <cmath>
-
+#include <vector>
 extern "C" __declspec(dllexport)
-double func(double x) {
-    return sin(x);
+double func(const std::vector<double>& values) {
+    //if (values.size() != 1) throw std::exception();
+    return sin(values[0]);
 }

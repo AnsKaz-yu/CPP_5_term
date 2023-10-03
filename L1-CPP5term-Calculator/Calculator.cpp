@@ -1,34 +1,21 @@
 #include "Calculator.h"
 
 template <typename T1, typename T2>
-bool convertToT(T1& t1, T2& t2){
+bool convert_via_stringstream(T1&& t1, T2&& t2){
     std::stringstream s;
     s<<t1;
     return static_cast<bool>(s >> t2);
 }
 
-Calculator::Calculator() {
-    precedence["+"] = 1;
-    precedence["-"] = 1;
-    precedence["*"] = 2;
-    precedence["/"] = 2;
-    precedence["^"] = 3;
 
-    functions["+"] = [](double a, double b)->double {return b + a; };
-    functions["-"] = [](double a, double b)->double {return b - a; };
-    functions["*"] = [](double a, double b)->double {return b * a; };
-    functions["/"] = [](double a, double b)->double {return b / a; };
-    functions["^"] = [](double a, double b) {return pow(b, a); };
-}
-
-std::string Calculator::to_default_view(std::string str) {
+std::string Calculator::conversion_to_the_standard_form(const std::string& str) {
     std::string def;
     std::string t;
     double d;
     char previous = '(';
     for (auto u : str){
         if (isspace(u)) continue;
-        convertToT(u, t);
+        convert_via_stringstream(u, t);
 
         if (u == '-' && previous == '('){
             def += " 0 " + t;
@@ -36,13 +23,14 @@ std::string Calculator::to_default_view(std::string str) {
             continue;
         }
 
-        if (functions.contains(t) || t == "(" || t == ")"){
+        if (DO.contains(t) || t == "(" || t == ")"){
             def += " " + t + " ";
             previous = u;
             continue;
         }
 
-        if (convertToT(u, d) != convertToT(previous, d) && u != '.' && previous != '.') {
+        if (convert_via_stringstream(u, double()) != convert_via_stringstream(previous, double())
+        && u != '.' && previous != '.') {
             def += " " + t;
             previous = u;
             continue;
@@ -57,32 +45,51 @@ std::string Calculator::to_default_view(std::string str) {
 void Calculator::action(){
     std::string operation = operators.top();
     operators.pop();
-    if (functions.contains(operation)){
+    if (DO.contains(operation)){
         double a, b;
         a = numbers.top(); numbers.pop();
         b = numbers.top(); numbers.pop();
-        numbers.push(functions[operation](a, b));
-    } else{
-        double a;
-        a = numbers.top(); numbers.pop();
-        if (PL.contains(operation)){
-            numbers.push(PL.functions(operation, a));
-        }else throw std::exception();
+        numbers.push(DO.functions(operation, a, b));
+        return;
     }
+
+    if (!PL.contains(operation)) {
+            throw std::exception();
+    }
+
+    std::vector<double> values;
+    bool success;
+    double res;
+    do{
+        success = true;
+        if (numbers.empty()){
+            throw std::exception();
+        }
+        values.push_back(numbers.top());
+        numbers.pop();
+        try {
+            res = PL.function(operation, values);
+        }
+        catch (...) {
+            success = false;
+        }
+    }while (!success);
+    numbers.push(res);
 }
 
 void Calculator::Solve(std::string expression){
-    expression = to_default_view(expression);
+    clearStacks();
+    expression = conversion_to_the_standard_form(expression);
     std::stringstream s(expression);
     std::string elem;
     double d;
     while (s>>elem){
-        if (convertToT(elem, d)){
+        if (convert_via_stringstream(elem, d)){
             numbers.push(d);
             continue;
         }
 
-        if (operators.empty() || operators.top() == "("){
+        if (operators.empty() || operators.top() == "(" || elem == "(" || PL.contains(elem)){
             operators.push(elem);
             continue;
         }
@@ -95,9 +102,9 @@ void Calculator::Solve(std::string expression){
             continue;
         }
 
-        while (!operators.empty() && operators.top()!= "("
-        && precedence.contains(elem)
-        && precedence[operators.top()] >= precedence[elem]){
+        while (!operators.empty() && operators.top() != "("
+        && ((DO.contains(operators.top()) && !DO.precedenceIsMaintained(operators.top(), elem))
+        || PL.contains(operators.top()))){
             action();
         }
         operators.push(elem);
@@ -109,4 +116,9 @@ void Calculator::Solve(std::string expression){
 
     std::cout<<numbers.top()<<std::endl;
     numbers.pop();
+}
+
+void Calculator::clearStacks() {
+    std::stack<double>().swap(numbers);
+    std::stack<std::string>().swap(operators);
 }
